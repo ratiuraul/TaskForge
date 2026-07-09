@@ -1,3 +1,4 @@
+from app.common.enums import UserRole
 from app.modules.auth.models.user_model import User
 from app.modules.auth.repository.user_repository import UserRepository
 from app.modules.auth.schemas.user_schema import UserCreate, UserResponse
@@ -12,6 +13,7 @@ class AuthService:
             email=user_data.email,
             username=user_data.username,
             hashed_password=user_data.password,
+            role=UserRole.USER
         )
 
         created_user = self.repository.create(user)
