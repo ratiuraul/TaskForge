@@ -14,3 +14,8 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     role: UserRole
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
