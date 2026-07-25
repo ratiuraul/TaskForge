@@ -6,7 +6,7 @@ from app.modules.organizations.models import Organization
 
 
 class OrganizationsRepository:
-    def __init__(self, db: Session, user: User):
+    def __init__(self, db: Session):
         self.db = db
 
     def create(self, organization: Organization) -> Organization:

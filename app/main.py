@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
 from app.modules.auth.api.routes import router as auth_router
+from app.modules.organizations.api.routes import router as org_router
 
 app = FastAPI(title="TaskForge", version="0.1.0")
 
@@ -23,3 +24,4 @@ async def health_check(db: Session = Depends(get_db)):
 
 
 app.include_router(auth_router)
+app.include_router(org_router)
