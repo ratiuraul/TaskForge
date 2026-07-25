@@ -12,3 +12,11 @@ class UserAlreadyExistsError(HTTPException):
 class InvalidCredentialsError(HTTPException):
     def __init__(self):
         super().__init__(status_code=404, detail="Invalid username or password.")
+
+
+class OrgAlreadyExistsError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Organization with this name already exists.",
+        )

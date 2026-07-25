@@ -23,3 +23,7 @@ class OrganizationsRepository:
     def get_by_id(self, org_id: int) -> Organization | None:
         query = select(Organization).where(Organization.id == org_id)
         return self.db.scalar(query)
+
+    def get_by_name(self, org_name: str) -> Organization | None:
+        query = select(Organization).where(Organization.name == org_name)
+        return self.db.scalar(query)
