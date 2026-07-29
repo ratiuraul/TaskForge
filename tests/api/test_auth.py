@@ -1,17 +1,7 @@
 from fastapi import status
 
 from app.common.enums import UserRole
-
-REGISTER_PAYLOAD = {
-    "email": "test@example.com",
-    "username": "test",
-    "password": "password123",
-}
-
-LOGIN_PAYLOAD = {
-    "email": "test@example.com",
-    "password": "password123",
-}
+from tests.constants import LOGIN_PAYLOAD, REGISTER_PAYLOAD
 
 
 def test_register(client):
@@ -66,19 +56,8 @@ def test_protected_me_route_no_token(client):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-def test_protected_me_route_valid_token(client):
-    client.post("/auth/register", json=REGISTER_PAYLOAD)
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": LOGIN_PAYLOAD["email"],
-            "password": LOGIN_PAYLOAD["password"],
-        },
-    )
-
-    token = login_response.json().get("access_token")
-
-    response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+def test_protected_me_route_valid_token(client, auth_token):
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {auth_token}"})
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json().get("email") == LOGIN_PAYLOAD["email"]

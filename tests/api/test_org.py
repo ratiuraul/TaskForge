@@ -3,33 +3,13 @@ from sqlalchemy import select
 
 from app.modules.auth.models.user_model import User
 from app.modules.organizations.models.organizations_model import Organization
-
-REGISTER_PAYLOAD = {
-    "email": "test@example.com",
-    "username": "test",
-    "password": "password123",
-}
-
-LOGIN_PAYLOAD = {
-    "email": "test@example.com",
-    "password": "password123",
-}
+from tests.constants import REGISTER_PAYLOAD
 
 
-def test_create_org(client):
-    client.post("/auth/register", json=REGISTER_PAYLOAD)
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": LOGIN_PAYLOAD["email"],
-            "password": LOGIN_PAYLOAD["password"],
-        },
-    )
-    token = login_response.json().get("access_token")
-
+def test_create_org(client, auth_token):
     response = client.post(
         "/organizations",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {auth_token}"},
         json={
             "name": "My Organization",
         },
@@ -52,21 +32,11 @@ def test_create_org_without_token(client):
     assert response.json() == {"detail": "Not authenticated"}
 
 
-def test_create_duplicate_org(client):
-    client.post("/auth/register", json=REGISTER_PAYLOAD)
-
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": LOGIN_PAYLOAD["email"],
-            "password": LOGIN_PAYLOAD["password"],
-        },
-    )
-    token = login_response.json().get("access_token")
+def test_create_duplicate_org(client, auth_token):
 
     client.post(
         "/organizations",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {auth_token}"},
         json={
             "name": "My Organization",
         },
@@ -74,7 +44,7 @@ def test_create_duplicate_org(client):
 
     response = client.post(
         "/organizations",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {auth_token}"},
         json={
             "name": "My Organization",
         },
@@ -83,20 +53,10 @@ def test_create_duplicate_org(client):
     assert response.status_code == status.HTTP_409_CONFLICT
 
 
-def test_create_org_sets_current_user_as_owner(client, db):
-    client.post("/auth/register", json=REGISTER_PAYLOAD)
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": LOGIN_PAYLOAD["email"],
-            "password": LOGIN_PAYLOAD["password"],
-        },
-    )
-    token = login_response.json().get("access_token")
-
+def test_create_org_sets_current_user_as_owner(client, db, auth_token):
     response = client.post(
         "/organizations",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {auth_token}"},
         json={
             "name": "My Organization",
         },
