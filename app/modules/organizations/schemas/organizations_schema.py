@@ -12,3 +12,7 @@ class OrganizationResponse(BaseModel):
     id: int
     name: str
     created_at: datetime
+
+
+class OrganizationUpdate(BaseModel):
+    name: str

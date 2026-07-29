@@ -20,3 +20,11 @@ class OrgAlreadyExistsError(HTTPException):
             status_code=status.HTTP_409_CONFLICT,
             detail="Organization with this name already exists.",
         )
+
+
+class InvalidOrgIdError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization with this id does not exists",
+        )
