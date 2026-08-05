@@ -1,1 +1,1 @@
-from .organizations_model import Organization
+from .organizations_model import Organization, OrganizationMember

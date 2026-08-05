@@ -1,8 +1,12 @@
 from fastapi import status
 from sqlalchemy import select
 
+from app.common.enums import OrganizationRole
 from app.modules.auth.models.user_model import User
-from app.modules.organizations.models.organizations_model import Organization
+from app.modules.organizations.models.organizations_model import (
+    Organization,
+    OrganizationMember,
+)
 from tests.constants import REGISTER_PAYLOAD
 
 
@@ -26,7 +30,6 @@ def test_create_org(client, auth_token):
     assert response.json().get("name") == "My Organization"
     assert "id" in response.json()
     assert "created_at" in response.json()
-    assert "owner_id" not in response.json()
 
 
 def test_create_org_without_token(client):
@@ -61,7 +64,7 @@ def test_create_duplicate_org(client, auth_token):
     assert response.status_code == status.HTTP_409_CONFLICT
 
 
-def test_create_org_sets_current_user_as_owner(client, db, auth_token):
+def test_create_org_creates_owner_membership(client, db, auth_token):
     response = client.post(
         "/organizations",
         headers={"Authorization": f"Bearer {auth_token}"},
@@ -72,10 +75,17 @@ def test_create_org_sets_current_user_as_owner(client, db, auth_token):
     assert response.status_code == status.HTTP_200_OK
     query = select(Organization).where(Organization.id == response.json().get("id"))
     db_org = db.scalar(query)
-    user = db.scalar(select(User).where(User.email == REGISTER_PAYLOAD["email"]))
     assert db_org is not None
+    user = db.scalar(select(User).where(User.email == REGISTER_PAYLOAD["email"]))
     assert user is not None
-    assert db_org.owner_id == user.id
+    org_member_query = (
+        select(OrganizationMember)
+        .where(OrganizationMember.organization_id == response.json().get("id"))
+        .where(OrganizationMember.user_id == user.id)
+    )
+    org_member = db.scalar(org_member_query)
+    assert org_member is not None
+    assert org_member.role == OrganizationRole.OWNER
 
 
 def test_get_all_empty_orgs(client, auth_token):
@@ -299,6 +309,10 @@ def test_delete_existing_org(client, auth_token, db):
     assert delete_response.status_code == status.HTTP_204_NO_CONTENT
     db_org = db.scalar(select(Organization).where(Organization.id == org_user1_id))
     assert db_org is None
+    db_org_member = db.scalar(
+        select(OrganizationMember).where(OrganizationMember.id == org_user1_id)
+    )
+    assert db_org_member is None
 
 
 def test_delete_invalid_id(client, auth_token):
@@ -353,3 +367,24 @@ def test_delete_no_token(client):
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"detail": "Invalid token"}
+
+
+def test_exactly_one_owner(client, auth_token, db):
+    response = client.post(
+        "/organizations",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "name": "My Organization",
+        },
+    )
+    assert response.status_code == status.HTTP_200_OK
+    user = db.scalar(select(User).where(User.email == REGISTER_PAYLOAD["email"]))
+    assert user is not None
+
+    members = db.scalars(
+        select(OrganizationMember)
+        .where(OrganizationMember.organization_id == response.json().get("id"))
+        .where(OrganizationMember.user_id == user.id)
+    ).all()
+    assert len(members) == 1
+    assert members[0].role == OrganizationRole.OWNER
