@@ -8,9 +8,9 @@ from app.core.database import Base
 
 class Project(Base):
     __tablename__ = "projects"
-    __table_args__ = UniqueConstraint(
+    __table_args__ = (UniqueConstraint(
         "name", "organization_id", name="uq_project_organization"
-    )
+    ),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)

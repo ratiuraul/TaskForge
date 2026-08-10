@@ -8,6 +8,7 @@ from app.core.database import Base
 from app.core.config import settings
 from app.modules.auth import models
 from app.modules.organizations import models
+from app.modules.projects import models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
