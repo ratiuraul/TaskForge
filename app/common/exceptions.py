@@ -28,3 +28,19 @@ class InvalidOrgIdError(HTTPException):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Organization with this id does not exists",
         )
+
+
+class NotOrgMember(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not a member of this organization.",
+        )
+
+
+class ProjectAlreadyExists(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project with this name already exists in this organization.",
+        )
