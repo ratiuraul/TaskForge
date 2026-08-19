@@ -29,3 +29,20 @@ def create(
     )
 
     return project_service.create(project, user)
+
+
+@router.get("/projects/{project_id}", response_model=ProjectResponse)
+def get_by_id(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    project_repository = ProjectRepository(db)
+    organization_member_repository = OrganizationMembersRepository(db)
+
+    project_service = ProjectService(
+        project_repository=project_repository,
+        org_member_repository=organization_member_repository,
+    )
+
+    return project_service.get_by_id(project_id, user)
