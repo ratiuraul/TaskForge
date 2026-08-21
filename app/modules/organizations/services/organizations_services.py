@@ -60,7 +60,7 @@ class OrganizationsService:
         return [OrganizationResponse.model_validate(org) for org in organizations]
 
     def patch(
-        self, patch_payload: OrganizationUpdate, org_id: int, user: int
+        self, patch_payload: OrganizationUpdate, org_id: int, user: User
     ) -> OrganizationResponse | None:
         organization = self.repository.get_by_id(org_id=org_id, user_id=user.id)
         if not organization:

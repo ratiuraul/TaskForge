@@ -9,7 +9,11 @@ from app.modules.organizations.repository.organization_members_repository import
 )
 from app.modules.projects.models import Project
 from app.modules.projects.repository.projects_repository import ProjectRepository
-from app.modules.projects.schemas.projects_schema import ProjectCreate, ProjectResponse
+from app.modules.projects.schemas.projects_schema import (
+    ProjectCreate,
+    ProjectResponse,
+    ProjectUpdate,
+)
 
 
 class ProjectService:
@@ -65,3 +69,43 @@ class ProjectService:
     def get_all(self, current_user: User) -> list[ProjectResponse] | None:
         projects = self.project_repository.get_by_user_id(current_user.id)
         return [ProjectResponse.model_validate(project) for project in projects]
+
+    def patch(
+        self, patch_payload: ProjectUpdate, project_id: int, user: User
+    ) -> ProjectResponse | None:
+
+        existing_project = self.project_repository.get_by_id_and_user_id(
+            project_id=project_id, user_id=user.id
+        )
+
+        if not existing_project:
+            raise InvalidProjectIdError
+
+        project_name = (
+            patch_payload.name if patch_payload.name else existing_project.name
+        )
+        org_id = (
+            patch_payload.organization_id
+            if patch_payload.organization_id
+            else existing_project.organization_id
+        )
+
+        project_already_exists = self.project_repository.get_by_name_and_org_id(
+            name=project_name, org_id=org_id
+        )
+
+        if project_already_exists:
+            raise ProjectAlreadyExists
+
+        is_org_member = self.org_member_repository.get_membership(org_id, user.id)
+
+        if not is_org_member:
+            raise NotOrgMember
+
+        existing_project.name = project_name
+        existing_project.organization_id = org_id
+        existing_project.description = patch_payload.description
+
+        updated = self.project_repository.update(existing_project)
+
+        return ProjectResponse.model_validate(updated)

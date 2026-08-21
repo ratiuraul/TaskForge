@@ -52,3 +52,17 @@ class ProjectRepository:
 
         result = self.db.scalars(query)
         return result.all()
+
+    def get_by_id_and_user_id(self, project_id: int, user_id: int) -> Project:
+        query = (
+            select(Project)
+            .join(
+                OrganizationMember,
+                Project.organization_id == OrganizationMember.organization_id,
+            )
+            .where(OrganizationMember.user_id == user_id)
+            .where(Project.id == project_id)
+        )
+
+        result = self.db.scalar(query)
+        return result
