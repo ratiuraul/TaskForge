@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.projects.models import Project
+from app.modules.organizations.models import OrganizationMember
 
 
 class ProjectRepository:
@@ -38,3 +39,16 @@ class ProjectRepository:
     def delete(self, project: Project) -> None:
         self.db.delete(project)
         self.db.commit()
+
+    def get_by_user_id(self, user_id: int) -> list[Project]:
+        query = (
+            select(Project)
+            .join(
+                OrganizationMember,
+                Project.organization_id == OrganizationMember.organization_id,
+            )
+            .where(OrganizationMember.user_id == user_id)
+        )
+
+        result = self.db.scalars(query)
+        return result.all()

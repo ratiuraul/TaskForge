@@ -46,3 +46,16 @@ def get_by_id(
     )
 
     return project_service.get_by_id(project_id, user)
+
+
+@router.get("/projects", response_model=list[ProjectResponse])
+def get_all(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    project_repository = ProjectRepository(db)
+    organization_member_repository = OrganizationMembersRepository(db)
+
+    project_service = ProjectService(
+        project_repository=project_repository,
+        org_member_repository=organization_member_repository,
+    )
+
+    return project_service.get_all(user)

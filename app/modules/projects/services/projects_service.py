@@ -61,3 +61,7 @@ class ProjectService:
             raise NotOrgMember
 
         return ProjectResponse.model_validate(project)
+
+    def get_all(self, current_user: User) -> list[ProjectResponse] | None:
+        projects = self.project_repository.get_by_user_id(current_user.id)
+        return [ProjectResponse.model_validate(project) for project in projects]
