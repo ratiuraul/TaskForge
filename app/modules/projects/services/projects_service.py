@@ -109,3 +109,12 @@ class ProjectService:
         updated = self.project_repository.update(existing_project)
 
         return ProjectResponse.model_validate(updated)
+
+    def delete(self, project_id: int, current_user: User) -> None:
+        current_project = self.project_repository.get_by_id_and_user_id(
+            project_id=project_id, user_id=current_user.id
+        )
+        if not current_project:
+            raise InvalidProjectIdError
+
+        self.project_repository.delete(current_project)

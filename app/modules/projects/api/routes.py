@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
@@ -85,3 +85,21 @@ def patch_project(
     )
 
     return patched_project
+
+
+@router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete(
+    project_id,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    project_repository = ProjectRepository(db)
+    organization_member_repository = OrganizationMembersRepository(db)
+
+    project_service = ProjectService(
+        project_repository=project_repository,
+        org_member_repository=organization_member_repository,
+    )
+
+    project_service.delete(project_id=project_id, current_user=user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
