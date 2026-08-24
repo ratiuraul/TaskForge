@@ -89,7 +89,7 @@ def patch_project(
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(
-    project_id,
+    project_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
