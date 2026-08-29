@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.auth.models.user_model import User
+from app.modules.organizations.models.organizations_model import OrganizationMember
 
 
 class UserRepository:
@@ -24,3 +25,11 @@ class UserRepository:
 
     def get_by_id(self, user_id: int) -> User | None:
         return self.db.get(User, user_id)
+
+    def get_by_org_id(self, org_id: int) -> list[User]:
+        query = (
+            select(User)
+            .join(OrganizationMember, OrganizationMember.user_id == User.id)
+            .where(OrganizationMember.organization_id == org_id)
+        )
+        return self.db.scalars(query)

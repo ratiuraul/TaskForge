@@ -1,5 +1,10 @@
 from app.common.enums import OrganizationRole
-from app.common.exceptions import InvalidOrgIdError, OrgAlreadyExistsError
+from app.common.exceptions import (
+    InsufficientPrivilegesError,
+    InvalidOrgIdError,
+    OrgAlreadyExistsError,
+    UserIsAlreadyMember,
+)
 from app.modules.auth.models.user_model import User
 from app.modules.organizations.models.organizations_model import (
     Organization,

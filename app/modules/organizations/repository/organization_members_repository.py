@@ -1,10 +1,8 @@
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.modules.auth.models.user_model import User
-from app.modules.organizations.models.organizations_model import OrganizationMember
-
 from app.common.enums import OrganizationRole
+from app.modules.organizations.models.organizations_model import OrganizationMember
 
 
 class OrganizationMembersRepository:
@@ -39,6 +37,15 @@ class OrganizationMembersRepository:
     def delete_by_organization(self, organization_id):
         query = delete(OrganizationMember).where(
             OrganizationMember.organization_id == organization_id
+        )
+        self.db.execute(query)
+        self.db.commit()
+
+    def delete_by_user_and_org_id(self, organization_id, user_id):
+        query = (
+            delete(OrganizationMember)
+            .where(OrganizationMember.organization_id == organization_id)
+            .where(OrganizationMember.user_id == user_id)
         )
         self.db.execute(query)
         self.db.commit()

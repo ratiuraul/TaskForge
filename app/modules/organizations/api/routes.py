@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models.user_model import User
+from app.modules.auth.repository.user_repository import UserRepository
+from app.modules.auth.schemas.user_schema import UserResponse
 from app.modules.organizations.repository.organization_members_repository import (
     OrganizationMembersRepository,
 )
@@ -12,8 +14,14 @@ from app.modules.organizations.repository.organizations_repository import (
 )
 from app.modules.organizations.schemas.organizations_schema import (
     OrganizationCreate,
+    OrganizationMemberCreate,
+    OrganizationMemberDelete,
+    OrganizationMemberResponse,
     OrganizationResponse,
     OrganizationUpdate,
+)
+from app.modules.organizations.services.organization_members_services import (
+    OrganizationsMembersService,
 )
 from app.modules.organizations.services.organizations_services import (
     OrganizationsService,
@@ -83,3 +91,56 @@ def delete_org(
     service = OrganizationsService(repository, member_repository)
     service.delete(org_id, user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/organizations/{org_id}/members", response_model=OrganizationMemberResponse
+)
+def add_org_member(
+    org_id: int,
+    org_member: OrganizationMemberCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = OrganizationsRepository(db)
+    member_repository = OrganizationMembersRepository(db)
+    user_repository = UserRepository(db)
+    service = OrganizationsMembersService(
+        repository, member_repository, user_repository=user_repository
+    )
+    added_member = service.create(
+        organization_member=org_member, current_user=user, org_id=org_id
+    )
+    return added_member
+
+
+@router.delete(
+    "/organizations/{org_id}/members", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_org_member(
+    org_id: int,
+    org_member: OrganizationMemberDelete,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = OrganizationsRepository(db)
+    member_repository = OrganizationMembersRepository(db)
+    user_repository = UserRepository(db)
+    service = OrganizationsMembersService(
+        repository, member_repository, user_repository=user_repository
+    )
+    service.delete(org_member, user, org_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/organizations/{org_id}/members", response_model=list[UserResponse])
+def get_users_for_org(
+    org_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    repository = OrganizationsRepository(db)
+    member_repository = OrganizationMembersRepository(db)
+    user_repository = UserRepository(db)
+    service = OrganizationsMembersService(
+        repository, member_repository, user_repository=user_repository
+    )
+    return service.get_members(user, org_id)

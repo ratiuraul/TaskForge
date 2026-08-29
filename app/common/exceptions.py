@@ -8,6 +8,13 @@ class UserAlreadyExistsError(HTTPException):
             detail="A user with this email already exists.",
         )
 
+class InvalidUserId(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid User id.",
+        )
+
 
 class InvalidCredentialsError(HTTPException):
     def __init__(self):
@@ -30,11 +37,27 @@ class InvalidOrgIdError(HTTPException):
         )
 
 
+class InsufficientPrivilegesError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not authorized for this action",
+        )
+
+
 class NotOrgMember(HTTPException):
     def __init__(self):
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="You are not a member of this organization.",
+        )
+
+
+class UserIsAlreadyMember(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already member in this organization.",
         )
 
 
