@@ -196,3 +196,70 @@ def test_org_projects_multiple_users(client, auth_token):
         == [project1.json(), project2.json()]
     )
     assert len(user1_projects.json()) == len(user2_projects.json()) == 2
+
+
+def test_get_project_by_id(client, auth_token):
+    created_project = create_project(client=client, auth_token=auth_token)
+    project_id = created_project.json().get("id")
+    own_projects_response = client.get(
+        f"/projects/{project_id}", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    assert own_projects_response.status_code == status.HTTP_200_OK
+    assert created_project.json() == own_projects_response.json()
+
+
+def test_get_invalid_project_id(client, auth_token):
+    invalid_project_response = client.get(
+        "/projects/99999999", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    assert invalid_project_response.status_code == status.HTTP_404_NOT_FOUND
+    assert (
+        invalid_project_response.json().get("detail")
+        == "Project with this id does not exists"
+    )
+
+
+def test_different_project_org(client, auth_token):
+    user2_email = "test2@example.com"
+    client.post(
+        "/auth/register",
+        json={
+            "email": user2_email,
+            "username": "test2",
+            "password": "password123",
+        },
+    )
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": user2_email,
+            "password": "password123",
+        },
+    )
+    user2_token = login_response.json().get("access_token")
+
+    org2 = create_org(client, user2_token, {"name": "Org2"})
+
+    org2_id = org2.json().get("id")
+
+    org2_project = create_project(client=client, auth_token=user2_token, org_id=org2_id)
+
+    org2_project_id = org2_project.json().get("id")
+
+    get_org_2_project = client.get(
+        f"/projects/{org2_project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+
+    assert get_org_2_project.status_code == status.HTTP_404_NOT_FOUND
+    assert (
+        get_org_2_project.json().get("detail")
+        == "You are not a member of this organization."
+    )
+
+
+def test_get_project_no_auth(client):
+    no_auth_response = client.get('/projects/10')
+    assert no_auth_response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert no_auth_response.json().get('detail') == 'Not authenticated'
