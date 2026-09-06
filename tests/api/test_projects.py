@@ -1,6 +1,8 @@
 from fastapi import status
 
 from tests.api.test_org import create_org
+from sqlalchemy import select
+from app.modules.projects.models import Project
 
 
 def create_project(
@@ -260,6 +262,237 @@ def test_different_project_org(client, auth_token):
 
 
 def test_get_project_no_auth(client):
-    no_auth_response = client.get('/projects/10')
+    no_auth_response = client.get("/projects/10")
     assert no_auth_response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert no_auth_response.json().get('detail') == 'Not authenticated'
+    assert no_auth_response.json().get("detail") == "Not authenticated"
+
+
+def test_update_name(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={"name": "New Name"},
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert update_response.json().get("name") == "New Name"
+
+
+def test_update_description(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={"description": "New Description"},
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert update_response.json().get("description") == "New Description"
+
+
+def test_update_organization_id(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    new_org = create_org(client, auth_token, {"name": "New Org"})
+    new_org_id = new_org.json().get("id")
+
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={"organization_id": new_org_id},
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert update_response.json().get("organization_id") == new_org_id
+
+
+def test_update(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    new_org = create_org(client, auth_token, {"name": "New Org"})
+    new_org_id = new_org.json().get("id")
+
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "organization_id": new_org_id,
+            "name": "New Name",
+            "description": "New Description",
+        },
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert update_response.json().get("organization_id") == new_org_id
+    assert update_response.json().get("name") == "New Name"
+    assert update_response.json().get("description") == "New Description"
+
+
+def test_patch_no_payload(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={},
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert update_response.json() == project.json()
+
+
+def test_patch_invalid_project(client, auth_token):
+    update_response = client.patch(
+        "/projects/9999",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={},
+    )
+    assert update_response.status_code == status.HTTP_404_NOT_FOUND
+    assert update_response.json() == {"detail": "Project with this id does not exists"}
+
+
+def test_invalid_user(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    client.post(
+        "/auth/register",
+        json={
+            "email": "test2@example.com",
+            "username": "test2",
+            "password": "password123",
+        },
+    )
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": "test2@example.com",
+            "password": "password123",
+        },
+    )
+
+    user2_token = login_response.json().get("access_token")
+
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {user2_token}"},
+        json={},
+    )
+
+    assert update_response.status_code == status.HTTP_404_NOT_FOUND
+    assert update_response.json() == {"detail": "Project with this id does not exists"}
+
+
+def test_already_exists_in_new_org(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    project_name = project.json().get("name")
+
+    new_org = create_org(client, auth_token, {"name": "New Org"})
+    new_org_id = new_org.json().get("id")
+    create_project(client, auth_token, name=project_name, org_id=new_org_id)
+
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={"organization_id": new_org_id},
+    )
+
+    assert update_response.status_code == status.HTTP_409_CONFLICT
+    assert update_response.json() == {
+        "detail": "Project with this name already exists in this organization."
+    }
+
+
+def test_update_project_same_name_and_org_id(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+    project_name = project.json().get("name")
+    org_id = project.json().get("org_id")
+
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "project_name": project_name,
+            "org_id": org_id,
+            "description": "New Description",
+        },
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+
+
+def test_move_to_no_membership_org(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": "test2@example.com",
+            "username": "test2",
+            "password": "password123",
+        },
+    )
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": "test2@example.com",
+            "password": "password123",
+        },
+    )
+
+    user2_token = login_response.json().get("access_token")
+    new_org = create_org(client, user2_token, {"name": "New Org"})
+    new_org_id = new_org.json().get("id")
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "organization_id": new_org_id,
+        },
+    )
+
+    assert update_response.status_code == status.HTTP_404_NOT_FOUND
+    assert update_response.json() == {
+        "detail": "You are not a member of this organization."
+    }
+
+
+def test_move_to_membership_org(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    new_org = create_org(client, auth_token, {"name": "New Org"})
+    new_org_id = new_org.json().get("id")
+    update_response = client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "organization_id": new_org_id,
+        },
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert update_response.json().get("organization_id") == new_org_id
+
+
+def test_update_validate_db(client, auth_token, db):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    new_org = create_org(client, auth_token, {"name": "New Org"})
+    new_org_id = new_org.json().get("id")
+    client.patch(
+        f"/projects/{project_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={
+            "name": "New Name",
+            "description": "New Description",
+            "organization_id": new_org_id,
+        },
+    )
+    query = select(Project).where(Project.id == project_id)
+    db_response = db.scalar(query)
+    assert db_response.name == "New Name"
+    assert db_response.description == "New Description"
+    assert db_response.organization_id == new_org_id
