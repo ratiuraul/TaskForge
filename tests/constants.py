@@ -8,3 +8,15 @@ LOGIN_PAYLOAD = {
     "email": "test@example.com",
     "password": "password123",
 }
+
+
+REGISTER_PAYLOAD_2 = {
+    "email": "test2@example.com",
+    "username": "test2",
+    "password": "password123",
+}
+
+LOGIN_PAYLOAD_2 = {
+    "email": "test2@example.com",
+    "password": "password123",
+}

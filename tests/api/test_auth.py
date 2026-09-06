@@ -1,7 +1,25 @@
 from fastapi import status
 
 from app.common.enums import UserRole
-from tests.constants import LOGIN_PAYLOAD, REGISTER_PAYLOAD
+from tests.constants import (
+    LOGIN_PAYLOAD,
+    LOGIN_PAYLOAD_2,
+    REGISTER_PAYLOAD,
+    REGISTER_PAYLOAD_2,
+)
+
+
+def new_user_token(client):
+    client.post("/auth/register", json=REGISTER_PAYLOAD_2)
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": LOGIN_PAYLOAD_2["email"],
+            "password": LOGIN_PAYLOAD_2["password"],
+        },
+    )
+    return login_response.json().get("access_token")
 
 
 def test_register(client):

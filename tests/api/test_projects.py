@@ -1,8 +1,10 @@
 from fastapi import status
-
-from tests.api.test_org import create_org
 from sqlalchemy import select
+
 from app.modules.projects.models import Project
+from tests.api.test_auth import new_user_token
+from tests.api.test_org import create_org
+from constants import LOGIN_PAYLOAD_2
 
 
 def create_project(
@@ -111,24 +113,7 @@ def test_get_all_projects_multiple_orgs(client, auth_token):
 
 
 def test_own_projects_only(client, auth_token):
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": "test2@example.com",
-            "password": "password123",
-        },
-    )
-
-    user2_token = login_response.json().get("access_token")
+    user2_token = new_user_token(client)
 
     org_user2 = create_org(
         client, auth_token=user2_token, payload={"name": "Org_user2"}
@@ -145,27 +130,8 @@ def test_own_projects_only(client, auth_token):
 
 
 def test_org_projects_multiple_users(client, auth_token):
-    # Todo need to add option to add multiple users to same org
-    # 2 useri , aceeasi org, adaugi 2 proiecte la org, get cu fiecare user token, raspunsurile la fel
 
-    user2_email = "test2@example.com"
-    client.post(
-        "/auth/register",
-        json={
-            "email": user2_email,
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": user2_email,
-            "password": "password123",
-        },
-    )
-    user2_token = login_response.json().get("access_token")
+    user2_token = new_user_token(client)
 
     common_org = create_org(client, auth_token, {"name": "Org2"})
 
@@ -174,7 +140,7 @@ def test_org_projects_multiple_users(client, auth_token):
     # add user2 to common_org
     client.post(
         f"/organizations/{common_org_id}/members",
-        json={"email": user2_email, "role": "MEMBER"},
+        json={"email": LOGIN_PAYLOAD_2.get("email"), "role": "MEMBER"},
         headers={"Authorization": f"Bearer {auth_token}"},
     )
 
@@ -188,10 +154,10 @@ def test_org_projects_multiple_users(client, auth_token):
     user1_projects = client.get(
         "/projects", headers={"Authorization": f"Bearer {auth_token}"}
     )
-
     user2_projects = client.get(
         "/projects", headers={"Authorization": f"Bearer {user2_token}"}
     )
+
     assert (
         user1_projects.json()
         == user2_projects.json()
@@ -222,24 +188,7 @@ def test_get_invalid_project_id(client, auth_token):
 
 
 def test_different_project_org(client, auth_token):
-    user2_email = "test2@example.com"
-    client.post(
-        "/auth/register",
-        json={
-            "email": user2_email,
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": user2_email,
-            "password": "password123",
-        },
-    )
-    user2_token = login_response.json().get("access_token")
+    user2_token = new_user_token(client)
 
     org2 = create_org(client, user2_token, {"name": "Org2"})
 
@@ -353,24 +302,7 @@ def test_patch_invalid_project(client, auth_token):
 def test_invalid_user(client, auth_token):
     project = create_project(client, auth_token)
     project_id = project.json().get("id")
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": "test2@example.com",
-            "password": "password123",
-        },
-    )
-
-    user2_token = login_response.json().get("access_token")
+    user2_token = new_user_token(client)
 
     update_response = client.patch(
         f"/projects/{project_id}",
@@ -425,24 +357,8 @@ def test_move_to_no_membership_org(client, auth_token):
     project = create_project(client, auth_token)
     project_id = project.json().get("id")
 
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
+    user2_token = new_user_token(client)
 
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": "test2@example.com",
-            "password": "password123",
-        },
-    )
-
-    user2_token = login_response.json().get("access_token")
     new_org = create_org(client, user2_token, {"name": "New Org"})
     new_org_id = new_org.json().get("id")
     update_response = client.patch(
