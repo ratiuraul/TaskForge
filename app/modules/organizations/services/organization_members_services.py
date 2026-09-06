@@ -3,10 +3,12 @@ from app.common.exceptions import (
     InsufficientPrivilegesError,
     InvalidOrgIdError,
     InvalidUserId,
+    NotOrgMember,
     UserIsAlreadyMember,
 )
 from app.modules.auth.models.user_model import User
 from app.modules.auth.repository.user_repository import UserRepository
+from app.modules.auth.schemas.user_schema import UserResponse
 from app.modules.organizations.models.organizations_model import (
     OrganizationMember,
 )
@@ -21,7 +23,6 @@ from app.modules.organizations.schemas.organizations_schema import (
     OrganizationMemberDelete,
     OrganizationMemberResponse,
 )
-from app.modules.auth.schemas.user_schema import UserResponse
 
 
 class OrganizationsMembersService:
@@ -42,6 +43,7 @@ class OrganizationsMembersService:
         organization_member: OrganizationMemberCreate
         | OrganizationMemberDelete
         | None = None,
+        organization_roles: list[OrganizationRole] | None = None,
     ):
         """
         checks:
@@ -50,6 +52,7 @@ class OrganizationsMembersService:
             current user is member of organization
             current user is owner or admin of organziation
         """
+
         organization = self.repository.get_by_id(org_id=org_id, user_id=current_user.id)
         if not organization:
             raise InvalidOrgIdError
@@ -60,14 +63,20 @@ class OrganizationsMembersService:
             if not user:
                 raise InvalidUserId
 
+        if not organization_roles:
+            organization_roles = [
+                OrganizationRole.OWNER,
+                OrganizationRole.ADMIN,
+            ]
+
         current_user_membership = self.member_repository.get_membership(
             org_id, current_user.id
         )
 
-        if not current_user_membership.role in [
-            OrganizationRole.OWNER,
-            OrganizationRole.ADMIN,
-        ]:
+        if not current_user_membership:
+            raise NotOrgMember
+
+        if not current_user_membership.role in organization_roles:
             raise InsufficientPrivilegesError
 
     def create(
@@ -89,6 +98,14 @@ class OrganizationsMembersService:
 
         if is_already_member:
             raise UserIsAlreadyMember
+
+        current_user_role = self.member_repository.get_org_role(org_id, current_user.id)
+
+        if (
+            organization_member.role == OrganizationRole.OWNER
+            and current_user_role != OrganizationRole.OWNER
+        ):
+            raise InsufficientPrivilegesError
 
         organization_member = OrganizationMember(
             organization_id=org_id,
@@ -117,10 +134,26 @@ class OrganizationsMembersService:
             org_id, target_user.id
         )
         if not is_target_user_member:
-            raise InvalidUserId
+            raise NotOrgMember
+
+        current_user_role = self.member_repository.get_org_role(org_id, current_user.id)
+
+        if (
+            target_user.role == OrganizationRole.OWNER
+            and current_user_role != OrganizationRole.OWNER
+        ):
+            raise InsufficientPrivilegesError
         self.member_repository.delete_by_user_and_org_id(org_id, target_user.id)
 
     def get_members(self, current_user: User, org_id: int) -> list[UserResponse]:
-        self.check_opperation_allowed(current_user, org_id)
+        self.check_opperation_allowed(
+            current_user,
+            org_id,
+            organization_roles=[
+                OrganizationRole.OWNER,
+                OrganizationRole.ADMIN,
+                OrganizationRole.MEMBER,
+            ],
+        )
         members = self.user_repository.get_by_org_id(org_id)
         return [UserResponse.model_validate(member) for member in members]

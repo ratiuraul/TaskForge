@@ -407,7 +407,7 @@ def test_update_project_same_name_and_org_id(client, auth_token):
     project = create_project(client, auth_token)
     project_id = project.json().get("id")
     project_name = project.json().get("name")
-    org_id = project.json().get("org_id")
+    org_id = project.json().get("organization_id")
 
     update_response = client.patch(
         f"/projects/{project_id}",
@@ -544,7 +544,7 @@ def test_delete_no_auth(client, auth_token):
     project_id = project.json().get("id")
 
     delete_response = client.delete(
-        f"/projects/{project_id}", headers={"Authorization": "Bearer invalid_token}"}
+        f"/projects/{project_id}", headers={"Authorization": "Bearer invalid_token"}
     )
 
     assert delete_response.status_code == status.HTTP_401_UNAUTHORIZED

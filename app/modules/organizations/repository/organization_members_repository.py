@@ -49,3 +49,13 @@ class OrganizationMembersRepository:
         )
         self.db.execute(query)
         self.db.commit()
+
+    def get_org_role(self, organization_id, user_id) -> OrganizationRole | None:
+        query = (
+            select(OrganizationMember)
+            .where(OrganizationMember.organization_id == organization_id)
+            .where(OrganizationMember.user_id == user_id)
+        )
+        org_member = self.db.scalar(query)
+        if org_member:
+            return org_member.role
