@@ -1,10 +1,10 @@
+from constants import LOGIN_PAYLOAD_2
 from fastapi import status
 from sqlalchemy import select
 
 from app.modules.projects.models import Project
 from tests.api.test_auth import new_user_token
 from tests.api.test_org import create_org
-from constants import LOGIN_PAYLOAD_2
 
 
 def create_project(

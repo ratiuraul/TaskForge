@@ -7,6 +7,7 @@ from app.modules.organizations.models.organizations_model import (
     Organization,
     OrganizationMember,
 )
+from tests.api.test_auth import new_user_token
 from tests.constants import REGISTER_PAYLOAD
 
 
@@ -114,26 +115,7 @@ def test_get_returns_multiple_orgs(client, auth_token):
 
 def test_multiple_users_orgs(client, auth_token):
     org_user1 = create_org(client, auth_token, {"name": "Org_user_1"})
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    token_user_2 = (
-        client.post(
-            "/auth/login",
-            data={
-                "username": "test2@example.com",
-                "password": "password123",
-            },
-        )
-        .json()
-        .get("access_token")
-    )
+    token_user_2 = new_user_token(client)
 
     org_user2 = create_org(client, token_user_2, {"name": "Org_user_2"})
 
@@ -180,26 +162,7 @@ def test_get_org_invalid_id(client, auth_token):
 
 def test_get_other_users_org(client, auth_token):
     org_user1 = create_org(client, auth_token, {"name": "Org_user_1"})
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    token_user_2 = (
-        client.post(
-            "/auth/login",
-            data={
-                "username": "test2@example.com",
-                "password": "password123",
-            },
-        )
-        .json()
-        .get("access_token")
-    )
+    token_user_2 = new_user_token(client)
 
     org_user_1 = client.get(
         f"/organizations/{org_user1.json().get('id')}",
@@ -257,26 +220,7 @@ def test_patch_org_invalid_id(client, auth_token):
 def test_patch_another_users_org(client, auth_token):
     org_user1 = create_org(client, auth_token, {"name": "Org_user_1"})
     org_user1_id = org_user1.json().get("id")
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    token_user_2 = (
-        client.post(
-            "/auth/login",
-            data={
-                "username": "test2@example.com",
-                "password": "password123",
-            },
-        )
-        .json()
-        .get("access_token")
-    )
+    token_user_2 = new_user_token(client)
 
     patch_response = client.patch(
         f"/organizations/{org_user1_id}",
@@ -329,26 +273,7 @@ def test_delete_invalid_id(client, auth_token):
 def test_delete_other_users_org(client, auth_token):
     org_user1 = create_org(client, auth_token, {"name": "Org_user_1"})
     org_user1_id = org_user1.json().get("id")
-    client.post(
-        "/auth/register",
-        json={
-            "email": "test2@example.com",
-            "username": "test2",
-            "password": "password123",
-        },
-    )
-
-    token_user_2 = (
-        client.post(
-            "/auth/login",
-            data={
-                "username": "test2@example.com",
-                "password": "password123",
-            },
-        )
-        .json()
-        .get("access_token")
-    )
+    token_user_2 = new_user_token(client)
 
     delete_response = client.delete(
         f"/organizations/{org_user1_id}",
