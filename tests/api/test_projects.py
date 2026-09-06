@@ -496,3 +496,66 @@ def test_update_validate_db(client, auth_token, db):
     assert db_response.name == "New Name"
     assert db_response.description == "New Description"
     assert db_response.organization_id == new_org_id
+
+
+def test_delete_success(client, auth_token, db):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    project_exists = db.scalar(select(Project).where(Project.id == project_id))
+
+    assert project_exists is not None
+
+    delete_response = client.delete(
+        f"/projects/{project_id}", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    assert delete_response.status_code == status.HTTP_204_NO_CONTENT
+
+    project_does_not_exist = db.scalar(select(Project).where(Project.id == project_id))
+
+    assert project_does_not_exist is None
+
+
+def test_project_not_in_get_all(client, auth_token):
+
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    get_projects = client.get(
+        "/projects", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+
+    assert project.json() in get_projects.json()
+
+    client.delete(
+        f"/projects/{project_id}", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+
+    get_projects = client.get(
+        "/projects", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+
+    assert project.json() not in get_projects.json()
+
+
+def test_delete_no_auth(client, auth_token):
+
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    delete_response = client.delete(
+        f"/projects/{project_id}", headers={"Authorization": "Bearer invalid_token}"}
+    )
+
+    assert delete_response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert delete_response.json() == {"detail": "Invalid token"}
+
+
+def test_delete_invalid_id(client, auth_token):
+
+    delete_response = client.delete(
+        f"/projects/9999", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+
+    assert delete_response.status_code == status.HTTP_404_NOT_FOUND
+    assert delete_response.json() == {"detail": "Project with this id does not exists"}
