@@ -9,14 +9,21 @@ from tests.constants import (
 )
 
 
-def new_user_token(client):
-    client.post("/auth/register", json=REGISTER_PAYLOAD_2)
+def new_user_token(client, register_payload=None, login_payload=None):
+
+    if not register_payload:
+        register_payload = REGISTER_PAYLOAD_2
+
+    if not login_payload:
+        login_payload = LOGIN_PAYLOAD_2
+
+    client.post("/auth/register", json=register_payload)
 
     login_response = client.post(
         "/auth/login",
         data={
-            "username": LOGIN_PAYLOAD_2["email"],
-            "password": LOGIN_PAYLOAD_2["password"],
+            "username": login_payload["email"],
+            "password": login_payload["password"],
         },
     )
     return login_response.json().get("access_token")
