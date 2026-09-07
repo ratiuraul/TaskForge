@@ -25,10 +25,6 @@ class OrganizationMemberCreate(BaseModel):
     role: OrganizationRole
 
 
-class OrganizationMemberDelete(BaseModel):
-    email: EmailStr
-
-
 class OrganizationMemberResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

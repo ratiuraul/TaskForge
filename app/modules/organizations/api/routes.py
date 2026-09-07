@@ -15,7 +15,6 @@ from app.modules.organizations.repository.organizations_repository import (
 from app.modules.organizations.schemas.organizations_schema import (
     OrganizationCreate,
     OrganizationMemberCreate,
-    OrganizationMemberDelete,
     OrganizationMemberResponse,
     OrganizationResponse,
     OrganizationUpdate,
@@ -115,11 +114,11 @@ def add_org_member(
 
 
 @router.delete(
-    "/organizations/{org_id}/members", status_code=status.HTTP_204_NO_CONTENT
+    "/organizations/{org_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 def delete_org_member(
     org_id: int,
-    org_member: OrganizationMemberDelete,
+    user_id: int,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -129,7 +128,7 @@ def delete_org_member(
     service = OrganizationsMembersService(
         repository, member_repository, user_repository=user_repository
     )
-    service.delete(org_member, user, org_id)
+    service.delete(user_id, user, org_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

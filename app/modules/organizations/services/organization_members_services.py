@@ -20,7 +20,6 @@ from app.modules.organizations.repository.organizations_repository import (
 )
 from app.modules.organizations.schemas.organizations_schema import (
     OrganizationMemberCreate,
-    OrganizationMemberDelete,
     OrganizationMemberResponse,
 )
 
@@ -41,7 +40,6 @@ class OrganizationsMembersService:
         current_user: User,
         org_id: int,
         organization_member: OrganizationMemberCreate
-        | OrganizationMemberDelete
         | None = None,
         organization_roles: list[OrganizationRole] | None = None,
     ):
@@ -119,7 +117,7 @@ class OrganizationsMembersService:
 
     def delete(
         self,
-        organization_member: OrganizationMemberDelete,
+        user_id:int,
         current_user: User,
         org_id: int,
     ) -> None:
@@ -127,9 +125,8 @@ class OrganizationsMembersService:
         self.check_opperation_allowed(
             current_user,
             org_id,
-            organization_member,
         )
-        target_user = self.user_repository.get_by_email(organization_member.email)
+        target_user = self.user_repository.get_by_id(user_id)
         is_target_user_member = self.member_repository.get_membership(
             org_id, target_user.id
         )
