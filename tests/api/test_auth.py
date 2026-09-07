@@ -1,6 +1,8 @@
 from fastapi import status
+from sqlalchemy import select
 
 from app.common.enums import UserRole
+from app.modules.auth.models import User
 from tests.constants import (
     LOGIN_PAYLOAD,
     LOGIN_PAYLOAD_2,
@@ -27,6 +29,11 @@ def new_user_token(client, register_payload=None, login_payload=None):
         },
     )
     return login_response.json().get("access_token")
+
+
+def get_by_email(db, email: str) -> User:
+    query = select(User).where(User.email == email)
+    return db.scalar(query)
 
 
 def test_register(client):

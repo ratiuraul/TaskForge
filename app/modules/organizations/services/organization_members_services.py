@@ -5,6 +5,7 @@ from app.common.exceptions import (
     InvalidUserId,
     NotOrgMember,
     UserIsAlreadyMember,
+    UserNotOrgMember,
 )
 from app.modules.auth.models.user_model import User
 from app.modules.auth.repository.user_repository import UserRepository
@@ -126,12 +127,18 @@ class OrganizationsMembersService:
             current_user,
             org_id,
         )
+
+
         target_user = self.user_repository.get_by_id(user_id)
+
+        if not target_user:
+            raise InvalidUserId
+
         is_target_user_member = self.member_repository.get_membership(
             org_id, target_user.id
         )
         if not is_target_user_member:
-            raise NotOrgMember
+            raise UserNotOrgMember
 
         current_user_role = self.member_repository.get_org_role(org_id, current_user.id)
 

@@ -53,6 +53,14 @@ class NotOrgMember(HTTPException):
         )
 
 
+class UserNotOrgMember(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User is not a member of this organization.",
+        )
+
+
 class UserIsAlreadyMember(HTTPException):
     def __init__(self):
         super().__init__(
