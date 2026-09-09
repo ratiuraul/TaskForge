@@ -14,3 +14,19 @@ class OrganizationRole(str, Enum):
     OWNER = "OWNER"
     ADMIN = "ADMIN"
     MEMBER = "MEMBER"
+
+
+class TaskStatus(str, Enum):
+    """Allowed task statuses"""
+
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+
+
+class TaskPriority(str, Enum):
+    "Allowed task priorites"
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
