@@ -1,5 +1,6 @@
-from sqlalchemy import Session, select
+from sqlalchemy.orm import Session
 from app.modules.tasks.models import Task
+from sqlalchemy import select
 
 
 class TaskRepository:
