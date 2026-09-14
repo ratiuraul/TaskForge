@@ -8,6 +8,7 @@ class UserAlreadyExistsError(HTTPException):
             detail="A user with this email already exists.",
         )
 
+
 class InvalidUserId(HTTPException):
     def __init__(self):
         super().__init__(
@@ -82,4 +83,20 @@ class InvalidProjectIdError(HTTPException):
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project with this id does not exists",
+        )
+
+
+class InvalidTaskIdError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task with this id does not exists",
+        )
+
+
+class InvalidAsigneeIdError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Asignee id is not valid.",
         )
