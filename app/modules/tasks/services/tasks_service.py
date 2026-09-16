@@ -89,6 +89,16 @@ class TaskService:
             if not is_valid_project_id:
                 raise InvalidProjectIdError
 
+            assignee_id = updates.get("assigned_to_id", existing_task.assigned_to_id)
+            if assignee_id is not None:
+                assignee_can_access_target = (
+                    self.project_repository.get_by_id_and_user_id(
+                        project_id=new_project_id, user_id=assignee_id
+                    )
+                )
+                if not assignee_can_access_target:
+                    raise InvalidAsigneeIdError
+
         if "assigned_to_id" in updates:
             assignee_id = updates["assigned_to_id"]
             if assignee_id is not None:

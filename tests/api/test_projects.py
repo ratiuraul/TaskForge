@@ -1,10 +1,11 @@
+from operator import ge
 from constants import LOGIN_PAYLOAD_2
 from fastapi import status
 from sqlalchemy import select
 
 from app.modules.projects.models import Project
 from tests.api.test_auth import new_user_token
-from tests.api.test_org import create_org
+from tests.api.test_org import create_org, get_orgs
 
 
 def create_project(
@@ -12,8 +13,15 @@ def create_project(
 ):
 
     if org_id is None:
-        current_org = create_org(client, auth_token, {"name": "Org2"})
-        org_id = current_org.json().get("id")
+        org_name = "Org2"
+        orgs = get_orgs(client, auth_token)
+        for org in orgs.json():
+            if org.get("name") == org_name:
+                org_id = org["id"]
+                break
+        else:
+            created = create_org(client, auth_token, {"name": org_name})
+            org_id = created.json()["id"]
 
     payload = {
         "name": name,

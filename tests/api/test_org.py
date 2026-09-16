@@ -19,6 +19,12 @@ def create_org(client, auth_token, payload):
     )
 
 
+def get_orgs(client, auth_token):
+    return client.get(
+        "/organizations", headers={"Authorization": f"Bearer {auth_token}"}
+    )
+
+
 def test_create_org(client, auth_token):
     response = client.post(
         "/organizations",
