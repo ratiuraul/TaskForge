@@ -1,4 +1,3 @@
-from operator import ge
 from constants import LOGIN_PAYLOAD_2
 from fastapi import status
 from sqlalchemy import select
@@ -15,13 +14,14 @@ def create_project(
     if org_id is None:
         org_name = "Org2"
         orgs = get_orgs(client, auth_token)
-        for org in orgs.json():
-            if org.get("name") == org_name:
-                org_id = org["id"]
-                break
-        else:
-            created = create_org(client, auth_token, {"name": org_name})
-            org_id = created.json()["id"]
+        if orgs.status_code == status.HTTP_200_OK:
+            for org in orgs.json():
+                if org.get("name") == org_name:
+                    org_id = org["id"]
+                    break
+            else:
+                created = create_org(client, auth_token, {"name": org_name})
+                org_id = created.json()["id"]
 
     payload = {
         "name": name,
