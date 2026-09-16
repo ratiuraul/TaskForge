@@ -18,6 +18,23 @@ class TaskService:
         self.task_repository = task_repository
         self.project_repository = project_repository
 
+    def get_task_for_user(self, task_id: int, user: User) -> Task:
+        task = self.task_repository.get_by_task_id(task_id)
+
+        if not task:
+            raise InvalidTaskIdError
+
+        project_id = task.project_id
+
+        users_projects = self.project_repository.get_by_id_and_user_id(
+            project_id=project_id, user_id=user.id
+        )
+
+        if not users_projects:
+            raise InvalidProjectIdError
+
+        return task
+
     def create(
         self, task_create: TaskCreate, project_id: int, user: User
     ) -> TaskResponse:
@@ -56,21 +73,9 @@ class TaskService:
 
     def patch(
         self, patch_payload: TaskUpdate, task_id: int, user: User
-    ) -> TaskResponse :
+    ) -> TaskResponse:
         # Valid task id?
-        existing_task = self.task_repository.get_by_task_id(task_id)
-        if not existing_task:
-            raise InvalidTaskIdError
-
-        project_id = existing_task.project_id
-
-        # Can user access this project?
-        users_projects = self.project_repository.get_by_id_and_user_id(
-            project_id=project_id, user_id=user.id
-        )
-
-        if not users_projects:
-            raise InvalidProjectIdError
+        existing_task = self.get_task_for_user(task_id=task_id, user=user)
 
         # Get only the user sent key/values
 
@@ -111,3 +116,15 @@ class TaskService:
         tasks = self.task_repository.get_all_project_id(project_id=project_id)
 
         return [TaskResponse.model_validate(task) for task in tasks]
+
+    def get_by_id(self, task_id: int, user: User) -> TaskResponse:
+
+        task = self.get_task_for_user(task_id=task_id, user=user)
+
+        return TaskResponse.model_validate(task)
+
+    def delete(self, task_id: int, user: User) -> None:
+
+        task = self.get_task_for_user(task_id=task_id, user=user)
+
+        self.task_repository.delete(task)
