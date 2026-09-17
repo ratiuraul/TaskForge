@@ -636,3 +636,30 @@ def test_delete_other_users_task(client, auth_token, db):
 
     task_still_exists = db.scalar(select(Task).where(Task.id == task_id))
     assert task_still_exists is not None
+
+
+def test_get_tasks_query_params(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    task1 = create_task(
+        client,
+        auth_token,
+        project_id,
+        payload={"title": "Task 1", "status": TaskStatus.DONE},
+    )
+
+    create_task(
+        client,
+        auth_token,
+        project_id,
+        payload={"title": "Task 2", "status": TaskStatus.IN_PROGRESS},
+    )
+
+    response = client.get(
+        f"/projects/{project_id}/tasks?status={TaskStatus.DONE.value}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [task1.json()]
