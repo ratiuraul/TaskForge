@@ -33,6 +33,8 @@ class TaskRepository:
         assigned_to_id: int = None,
         status: TaskStatus = None,
         priority: TaskPriority = None,
+        limit: int = 20,
+        offset: int = 0,
     ) -> list[Task]:
         query = select(Task).where(Task.project_id == project_id)
 
@@ -44,5 +46,7 @@ class TaskRepository:
 
         if priority is not None:
             query = query.where(Task.priority == priority)
+
+        query = query.order_by(Task.id).limit(limit).offset(offset)
 
         return self.db.scalars(query).all()

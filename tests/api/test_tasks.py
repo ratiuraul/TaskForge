@@ -663,3 +663,32 @@ def test_get_tasks_query_params(client, auth_token):
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == [task1.json()]
+
+
+def test_get_tasks_pagination(client, auth_token):
+    project = create_project(client, auth_token)
+    project_id = project.json().get("id")
+
+    task1 = create_task(client, auth_token, project_id, payload={"title": "Task 1"})
+
+    task2 = create_task(client, auth_token, project_id, payload={"title": "Task 2"})
+
+    task3 = create_task(client, auth_token, project_id, payload={"title": "Task 3"})
+
+    response1 = client.get(
+        f"/projects/{project_id}/tasks?limit=2&offset=0",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+
+    response2 = client.get(
+        f"/projects/{project_id}/tasks?limit=2&offset=2",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+
+    assert task1.json() in response1.json()
+    assert task2.json() in response1.json()
+    assert task3.json() not in response1.json()
+
+    assert task1.json() not in response2.json()
+    assert task2.json() not in response2.json()
+    assert task3.json() in response2.json()

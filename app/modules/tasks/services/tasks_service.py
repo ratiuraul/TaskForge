@@ -122,6 +122,8 @@ class TaskService:
         assigned_to_id: int = None,
         status: TaskStatus = None,
         priority: TaskPriority = None,
+        limit=20,
+        offset=0,
     ) -> list[TaskResponse]:
         users_projects = self.project_repository.get_by_id_and_user_id(
             project_id=project_id, user_id=user.id
@@ -135,6 +137,8 @@ class TaskService:
             assigned_to_id=assigned_to_id,
             status=status,
             priority=priority,
+            limit=limit,
+            offset=offset,
         )
 
         return [TaskResponse.model_validate(task) for task in tasks]

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, Query
 from sqlalchemy.orm import Session
 from app.common.enums import TaskPriority, TaskStatus
 from app.core.dependencies import get_db
@@ -44,6 +44,8 @@ def get_all(
     assigned_to_id: int = None,
     status: TaskStatus = None,
     priority: TaskPriority = None,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
     tasks_service = get_task_service(db=db)
 
@@ -53,6 +55,8 @@ def get_all(
         assigned_to_id=assigned_to_id,
         status=status,
         priority=priority,
+        limit=limit,
+        offset=offset,
     )
 
 
