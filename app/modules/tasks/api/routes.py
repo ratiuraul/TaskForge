@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
+from app.common.enums import TaskPriority, TaskStatus
 from app.core.dependencies import get_db
 from app.modules.tasks.schemas.tasks_schema import TaskResponse, TaskCreate, TaskUpdate
 from app.modules.tasks.services.tasks_service import TaskService
@@ -40,10 +41,19 @@ def get_all(
     project_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    assigned_to_id: int = None,
+    status: TaskStatus = None,
+    priority: TaskPriority = None,
 ):
     tasks_service = get_task_service(db=db)
 
-    return tasks_service.get_all_tasks(project_id=project_id, user=user)
+    return tasks_service.get_all_tasks(
+        project_id=project_id,
+        user=user,
+        assigned_to_id=assigned_to_id,
+        status=status,
+        priority=priority,
+    )
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskResponse)

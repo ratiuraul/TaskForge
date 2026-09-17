@@ -115,7 +115,14 @@ class TaskService:
         updated = self.task_repository.update(existing_task)
         return TaskResponse.model_validate(updated)
 
-    def get_all_tasks(self, project_id: int, user: User) -> list[TaskResponse]:
+    def get_all_tasks(
+        self,
+        project_id: int,
+        user: User,
+        assigned_to_id: int = None,
+        status: TaskStatus = None,
+        priority: TaskPriority = None,
+    ) -> list[TaskResponse]:
         users_projects = self.project_repository.get_by_id_and_user_id(
             project_id=project_id, user_id=user.id
         )
@@ -123,7 +130,12 @@ class TaskService:
         if not users_projects:
             raise InvalidProjectIdError
 
-        tasks = self.task_repository.get_all_project_id(project_id=project_id)
+        tasks = self.task_repository.get_all_project_id(
+            project_id=project_id,
+            assigned_to_id=assigned_to_id,
+            status=status,
+            priority=priority,
+        )
 
         return [TaskResponse.model_validate(task) for task in tasks]
 

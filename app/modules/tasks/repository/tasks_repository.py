@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.modules.tasks.models import Task
 from sqlalchemy import select
+from app.common.enums import TaskPriority, TaskStatus
 
 
 class TaskRepository:
@@ -26,6 +27,22 @@ class TaskRepository:
         query = select(Task).where(Task.id == task_id)
         return self.db.scalar(query)
 
-    def get_all_project_id(self, project_id: int) -> list[Task]:
+    def get_all_project_id(
+        self,
+        project_id: int,
+        assigned_to_id: int = None,
+        status: TaskStatus = None,
+        priority: TaskPriority = None,
+    ) -> list[Task]:
         query = select(Task).where(Task.project_id == project_id)
+
+        if assigned_to_id is not None:
+            query = query.where(Task.assigned_to_id == assigned_to_id)
+
+        if status is not None:
+            query = query.where(Task.status == status)
+
+        if priority is not None:
+            query = query.where(Task.priority == priority)
+
         return self.db.scalars(query).all()
