@@ -6,7 +6,11 @@ from app.modules.comments.schemas.comments_schema import (
 )
 from app.modules.projects.repository.projects_repository import ProjectRepository
 from app.modules.auth.models.user_model import User
-from app.common.exceptions import InvalidTaskIdError, InvalidProjectIdError
+from app.common.exceptions import (
+    InvalidTaskIdError,
+    InvalidProjectIdError,
+    InvalidCommentIdError,
+)
 from app.modules.comments.models.comments_model import Comment
 from app.modules.tasks.repository.tasks_repository import TaskRepository
 
@@ -22,20 +26,34 @@ class CommentService:
         self.project_repo = project_repo
         self.task_repo = task_repo
 
-    def create(
-        self, task_id: int, comment: CommentCreate, current_user: User
-    ) -> CommentResponse:
+    def _check_task_permissions(self, task_id: int, user_id: int):
+        """
+        Check if task exists and user is member of the organziation of the project where the task belongs to,
+        Args:
+            task_id (int): id of the task to be checked
+            user_id (int): id of the current user
+
+        Raises:
+            InvalidTaskIdError: if task id is invalid
+            InvalidProjectIdError: if user does not have access to that task
+        """
         task = self.task_repo.get_by_task_id(task_id=task_id)
         if not task:
             raise InvalidTaskIdError
 
         project_id = task.project_id
         available_project = self.project_repo.get_by_id_and_user_id(
-            project_id=project_id, user_id=current_user.id
+            project_id=project_id, user_id=user_id
         )
 
         if not available_project:
             raise InvalidProjectIdError
+
+    def create(
+        self, task_id: int, comment: CommentCreate, current_user: User
+    ) -> CommentResponse:
+
+        self._check_task_permissions(task_id=task_id, user_id=current_user.id)
 
         comment_model = Comment(
             task_id=task_id,
@@ -45,3 +63,54 @@ class CommentService:
 
         created = self.comment_repo.create(comment_model)
         return CommentResponse.model_validate(created)
+
+    def patch(
+        self, comment_id: int, comment: CommentUpdate, current_user: User
+    ) -> CommentResponse:
+
+        existing_comment = self.comment_repo.get_by_id(comment_id=comment_id)
+
+        if not existing_comment:
+            raise InvalidCommentIdError
+
+        task_id = existing_comment.task_id
+
+        self._check_task_permissions(task_id=task_id, user_id=current_user.id)
+
+        existing_comment.body = comment.body
+        self.comment_repo.update(existing_comment)
+
+        comment_response = CommentResponse.model_validate(existing_comment)
+        return comment_response
+
+    def get_all(self, task_id: int, current_user: User) -> list[CommentResponse]:
+
+        self._check_task_permissions(task_id=task_id, user_id=current_user.id)
+        comments = self.comment_repo.get_by_task_id(task_id=task_id)
+        return [CommentResponse.model_validate(comment) for comment in comments]
+
+    def get_by_id(self, comment_id: int, current_user: User) -> CommentResponse:
+
+        existing_comment = self.comment_repo.get_by_id(comment_id=comment_id)
+
+        if not existing_comment:
+            raise InvalidCommentIdError
+
+        task_id = existing_comment.task_id
+
+        self._check_task_permissions(task_id=task_id, user_id=current_user.id)
+
+        return CommentResponse.model_validate(existing_comment)
+
+    def delete(self, comment_id: int, current_user: User) -> None:
+
+        existing_comment = self.comment_repo.get_by_id(comment_id=comment_id)
+
+        if not existing_comment:
+            raise InvalidCommentIdError
+
+        task_id = existing_comment.task_id
+
+        self._check_task_permissions(task_id=task_id, user_id=current_user.id)
+
+        self.comment_repo.delete(comment=existing_comment)

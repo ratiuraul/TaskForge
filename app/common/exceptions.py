@@ -100,3 +100,11 @@ class InvalidAsigneeIdError(HTTPException):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Asignee id is not valid.",
         )
+
+
+class InvalidCommentIdError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Comment with this id does not exists",
+        )
