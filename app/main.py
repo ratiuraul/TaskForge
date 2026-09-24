@@ -7,6 +7,7 @@ from app.modules.auth.api.routes import router as auth_router
 from app.modules.organizations.api.routes import router as org_router
 from app.modules.projects.api.routes import router as projects_router
 from app.modules.tasks.api.routes import router as tasks_router
+from app.modules.comments.api.routes import router as comments_router
 
 app = FastAPI(title="TaskForge", version="0.1.0")
 
@@ -29,3 +30,4 @@ app.include_router(auth_router)
 app.include_router(org_router)
 app.include_router(projects_router)
 app.include_router(tasks_router)
+app.include_router(comments_router)
