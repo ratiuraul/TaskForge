@@ -11,6 +11,7 @@ from app.modules.organizations import models
 from app.modules.projects import models
 from app.modules.tasks import models
 from app.modules.comments import models
+from app.modules.notifications import models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

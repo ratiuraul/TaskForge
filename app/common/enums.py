@@ -30,3 +30,10 @@ class TaskPriority(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+
+
+class NotificationType(str, Enum):
+    "Allowed types of notifications"
+
+    TASK_ASSIGNED = "task_assigned"
+    COMMENT_ON_TASK = "comment_on_task"
