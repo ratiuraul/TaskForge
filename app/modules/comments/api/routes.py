@@ -14,7 +14,9 @@ from app.modules.comments.services.comments_service import CommentService
 from app.modules.tasks.repository.tasks_repository import TaskRepository
 from app.modules.projects.repository.projects_repository import ProjectRepository
 from app.modules.comments.repository.comments_repository import CommentRepository
-
+from app.modules.notifications.repository.notification_repository import (
+    NotificationRepository,
+)
 
 router = APIRouter(tags=["Comments"])
 
@@ -23,9 +25,13 @@ def get_comment_service(db: Session) -> CommentService:
     project_repo = ProjectRepository(db=db)
     task_repo = TaskRepository(db=db)
     comment_repo = CommentRepository(db=db)
+    notification_repo = NotificationRepository(db=db)
 
     comment_service = CommentService(
-        comment_repo=comment_repo, project_repo=project_repo, task_repo=task_repo
+        comment_repo=comment_repo,
+        project_repo=project_repo,
+        task_repo=task_repo,
+        notification_repo=notification_repo,
     )
 
     return comment_service
