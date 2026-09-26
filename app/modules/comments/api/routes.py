@@ -17,6 +17,7 @@ from app.modules.comments.repository.comments_repository import CommentRepositor
 from app.modules.notifications.repository.notification_repository import (
     NotificationRepository,
 )
+from app.modules.notifications.services.notification_service import NotificationService
 
 router = APIRouter(tags=["Comments"])
 
@@ -25,13 +26,15 @@ def get_comment_service(db: Session) -> CommentService:
     project_repo = ProjectRepository(db=db)
     task_repo = TaskRepository(db=db)
     comment_repo = CommentRepository(db=db)
-    notification_repo = NotificationRepository(db=db)
+    notification_service = NotificationService(
+        notification_repo=NotificationRepository(db=db)
+    )
 
     comment_service = CommentService(
         comment_repo=comment_repo,
         project_repo=project_repo,
         task_repo=task_repo,
-        notification_repo=notification_repo,
+        notification_service=notification_service,
     )
 
     return comment_service

@@ -13,10 +13,7 @@ from app.common.exceptions import (
 )
 from app.modules.comments.models.comments_model import Comment
 from app.modules.tasks.repository.tasks_repository import TaskRepository
-from app.modules.notifications.models.notification_model import Notification
-from app.modules.notifications.repository.notification_repository import (
-    NotificationRepository,
-)
+from app.modules.notifications.services.notification_service import NotificationService
 from app.common.enums import NotificationType
 
 
@@ -26,12 +23,12 @@ class CommentService:
         comment_repo: CommentRepository,
         project_repo: ProjectRepository,
         task_repo: TaskRepository,
-        notification_repo: NotificationRepository,
+        notification_service: NotificationService,
     ):
         self.comment_repo = comment_repo
         self.project_repo = project_repo
         self.task_repo = task_repo
-        self.notification_repo = notification_repo
+        self.notification_service = notification_service
 
     def _check_task_permissions(self, task_id: int, user_id: int):
         """
@@ -81,14 +78,12 @@ class CommentService:
             recipients_ids.add(task.assigned_to_id)
 
         for recipient_id in recipients_ids:
-            notification_model = Notification(
+            self.notification_service.create(
                 recipient_id=recipient_id,
-                type=NotificationType.COMMENT_ON_TASK,
+                notification_type=NotificationType.COMMENT_ON_TASK,
                 task_id=task_id,
                 comment_id=created.id,
             )
-
-            self.notification_repo.create(notification=notification_model)
 
         return CommentResponse.model_validate(created)
 

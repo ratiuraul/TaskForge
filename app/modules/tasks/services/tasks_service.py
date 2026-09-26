@@ -8,15 +8,20 @@ from app.common.exceptions import (
     InvalidAsigneeIdError,
 )
 from app.modules.tasks.models.tasks_model import Task
-from app.common.enums import TaskPriority, TaskStatus
+from app.common.enums import NotificationType, TaskPriority, TaskStatus
+from app.modules.notifications.services.notification_service import NotificationService
 
 
 class TaskService:
     def __init__(
-        self, task_repository: TaskRepository, project_repository: ProjectRepository
+        self,
+        task_repository: TaskRepository,
+        project_repository: ProjectRepository,
+        notification_service: NotificationService,
     ) -> None:
         self.task_repository = task_repository
         self.project_repository = project_repository
+        self.notification_service = notification_service
 
     def get_task_for_user(self, task_id: int, user: User) -> Task:
         task = self.task_repository.get_by_task_id(task_id)
@@ -38,8 +43,6 @@ class TaskService:
     def create(
         self, task_create: TaskCreate, project_id: int, user: User
     ) -> TaskResponse:
-        # user has access to project?
-
         users_projects = self.project_repository.get_by_id_and_user_id(
             project_id=project_id, user_id=user.id
         )
@@ -48,7 +51,6 @@ class TaskService:
             raise InvalidProjectIdError
 
         if task_create.assigned_to_id is not None:
-            # is assigned user member of projects org?
             assign_users_projects = self.project_repository.get_by_id_and_user_id(
                 project_id=project_id, user_id=task_create.assigned_to_id
             )
@@ -69,17 +71,22 @@ class TaskService:
 
         created_task = self.task_repository.create(task_model)
 
+        if created_task.assigned_to_id and created_task.assigned_to_id != user.id:
+            self.notification_service.create(
+                recipient_id=created_task.assigned_to_id,
+                notification_type=NotificationType.TASK_ASSIGNED,
+                task_id=created_task.id,
+            )
+
         return TaskResponse.model_validate(created_task)
 
     def patch(
         self, patch_payload: TaskUpdate, task_id: int, user: User
     ) -> TaskResponse:
-        # Valid task id?
         existing_task = self.get_task_for_user(task_id=task_id, user=user)
 
-        # Get only the user sent key/values
-
         updates = patch_payload.model_dump(exclude_unset=True)
+        previous_assignee_id = existing_task.assigned_to_id
 
         if "project_id" in updates:
             new_project_id = updates["project_id"]
@@ -113,6 +120,19 @@ class TaskService:
             setattr(existing_task, field_name, value)
 
         updated = self.task_repository.update(existing_task)
+
+        if (
+            "assigned_to_id" in updates
+            and updated.assigned_to_id is not None
+            and updated.assigned_to_id != previous_assignee_id
+            and updated.assigned_to_id != user.id
+        ):
+            self.notification_service.create(
+                recipient_id=updated.assigned_to_id,
+                notification_type=NotificationType.TASK_ASSIGNED,
+                task_id=updated.id,
+            )
+
         return TaskResponse.model_validate(updated)
 
     def get_all_tasks(
@@ -144,13 +164,9 @@ class TaskService:
         return [TaskResponse.model_validate(task) for task in tasks]
 
     def get_by_id(self, task_id: int, user: User) -> TaskResponse:
-
         task = self.get_task_for_user(task_id=task_id, user=user)
-
         return TaskResponse.model_validate(task)
 
     def delete(self, task_id: int, user: User) -> None:
-
         task = self.get_task_for_user(task_id=task_id, user=user)
-
         self.task_repository.delete(task)

@@ -6,6 +6,10 @@ from app.modules.tasks.schemas.tasks_schema import TaskResponse, TaskCreate, Tas
 from app.modules.tasks.services.tasks_service import TaskService
 from app.modules.tasks.repository.tasks_repository import TaskRepository
 from app.modules.projects.repository.projects_repository import ProjectRepository
+from app.modules.notifications.repository.notification_repository import (
+    NotificationRepository,
+)
+from app.modules.notifications.services.notification_service import NotificationService
 
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models.user_model import User
@@ -16,9 +20,14 @@ router = APIRouter(tags=["Tasks"])
 def get_task_service(db: Session) -> TaskService:
     task_repository = TaskRepository(db)
     project_repository = ProjectRepository(db)
+    notification_service = NotificationService(
+        notification_repo=NotificationRepository(db)
+    )
 
     tasks_service = TaskService(
-        task_repository=task_repository, project_repository=project_repository
+        task_repository=task_repository,
+        project_repository=project_repository,
+        notification_service=notification_service,
     )
 
     return tasks_service
